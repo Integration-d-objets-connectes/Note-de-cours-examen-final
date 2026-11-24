@@ -28,7 +28,7 @@ db.create_collection("lectures_debit", timeseries={
 })
 ```
 
-Crée la collection time series avant d’y insérer la première lecture. Pour travailler dans une base déjà initialisée, vérifie que la collection existante a bien les options attendues. Relancer des insertions simples peut dupliquer les historiques ou provoquer un conflit de `_id`.
+Crée la série temporelle avant la première mesure. Sur une base déjà remplie, une relance peut dupliquer l’historique ou causer un conflit de `_id`.
 
 ## 3. Insérer les entités, puis réutiliser leurs identifiants
 
@@ -107,6 +107,6 @@ db.evenements.insert_many([
 | Au moins une alerte | Compte les documents de type `alerte` |
 | État du filtre cohérent | Compare la date dans la fontaine au dernier changement de l’historique |
 
-**Variantes et pièges.** Pour « une mesure toutes les cinq minutes », génère l’écart avec `timedelta(minutes=5 * i)`. Pour « une mesure aujourd’hui », construis la date à partir du minuit local. En soustrayant plusieurs minutes à l’heure actuelle, tu risques de passer à la veille juste après minuit. Si tu utilises des valeurs aléatoires, fixe d’abord les dates, les types et les quantités imposés, puis fais varier les valeurs libres.
+**Variantes** — Toutes les cinq minutes → `timedelta(minutes=5 * i)`. Aujourd’hui → dates entre minuit et maintenant. Valeurs aléatoires → fixe d’abord les quantités et les types obligatoires.
 
-Le [script de pratique](../insertion_donnees.py) associe les bons identifiants à des noms copiés différents. Il annonce aussi des mesures à zéro sans les garantir. Vérifie ces deux points dans ton propre jeu de données.
+**Pièges du script de pratique** — Les noms copiés doivent correspondre aux identifiants et les débits à zéro doivent être générés explicitement. [Script d’insertion](../insertion_donnees.py)

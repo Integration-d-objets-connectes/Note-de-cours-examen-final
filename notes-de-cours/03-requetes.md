@@ -20,7 +20,7 @@
 
 ## 2. Refaire les sept requêtes d’HydroCégep
 
-Les blocs utilisent la connexion et le calcul de `maintenant` et `minuit` de la [fiche d’insertion](02-insertion.md). Recalcule les dates au début du script de requêtes. Pour afficher les dates lues en heure locale, ouvre la connexion avec `MongoClient(..., tz_aware=True)`.
+Reprends le calcul des dates de la [fiche d’insertion](02-insertion.md). Utilise `MongoClient(..., tz_aware=True)` pour convertir les dates lues en heure locale.
 
 ### 1 et 2 — Bouteilles depuis minuit et au total
 
