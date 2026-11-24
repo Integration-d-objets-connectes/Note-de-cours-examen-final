@@ -1,5 +1,7 @@
 # Révision d’examen · NoSQL
 
+[Fiche MongoDB et équivalents SQL](04-fiche-mongodb.md)
+
 | Étape | À savoir faire | Fiche |
 |---|---|---|
 | **1. Modéliser** | Champ courant, historique, intégration, référence, copie, relations 1:1 / 1:N / N:N | [Modélisation](01-modelisation.md) |
