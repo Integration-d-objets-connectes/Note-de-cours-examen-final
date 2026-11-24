@@ -8,6 +8,21 @@ import config
 client = MongoClient(config.MONGODB_URI, serverSelectionTimeoutMS=5000, tz_aware=True)
 db = client[config.MONGODB_BASE]
 
+COLLECTIONS = (
+    "fontaines",
+    "utilisateurs",
+    "lectures_debit",
+    "remplissages",
+    "evenements",
+)
+
+# Comme DROP TABLE IF EXISTS en SQL. L'argument est le nom de la collection à supprimer.
+for nom in COLLECTIONS:
+    db.drop_collection(nom)
+
+# Comme CREATE TABLE en SQL. Le premier argument est le nom de la collection.
+# timeseries indique le champ de date, la métadonnée qui identifie la série
+# et la granularité des mesures.
 db.create_collection(
     "lectures_debit",
     timeseries={
@@ -18,16 +33,20 @@ db.create_collection(
 )
 
 maintenant = datetime.now(timezone.utc)
-minuit = datetime.now(config.FUSEAU_LOCAL).replace(
+minuit = maintenant.astimezone(config.FUSEAU_LOCAL).replace(
     hour=0, minute=0, second=0, microsecond=0
-)
+).astimezone(timezone.utc)
 FONTAINE = "hydrocegep-01"
 
 
+# INSERT INTO utilisateurs (nom) VALUES (...).
+# insert_one reçoit un dictionnaire. inserted_id récupère le _id généré pour le réutiliser.
 pierre_id = db.utilisateurs.insert_one({"nom": "Pierre"}).inserted_id
 lea_id = db.utilisateurs.insert_one({"nom": "Léa"}).inserted_id
 
-# Événements : 2 changements de filtre (un par technicien) et 2 alertes
+# INSERT INTO evenements (...) VALUES (...), (...), ...
+# insert_many reçoit une liste de documents. Ici, deux changements et deux alertes.
+# utilisateur.id référence le technicien et utilisateur.nom est une copie pour l'affichage.
 changement_pierre = maintenant - timedelta(days=11)
 db.evenements.insert_many(
     [
@@ -35,7 +54,7 @@ db.evenements.insert_many(
             "horodatage": maintenant - timedelta(days=40),
             "fontaine_id": FONTAINE,
             "type": "changement_filtre",
-            "utilisateur": {"id": lea_id, "nom": "Julie"},
+            "utilisateur": {"id": lea_id, "nom": "Léa"},
         },
         {
             "horodatage": maintenant - timedelta(days=13),
@@ -53,12 +72,13 @@ db.evenements.insert_many(
             "horodatage": changement_pierre,
             "fontaine_id": FONTAINE,
             "type": "changement_filtre",
-            "utilisateur": {"id": pierre_id, "nom": "Marc"},
+            "utilisateur": {"id": pierre_id, "nom": "Pierre"},
         },
     ]
 )
 
-# Fontaine (_id choisi)
+# INSERT INTO fontaines (...) VALUES (...).
+# Le document fournit son propre _id et contient les sous-documents config et filtre.
 db.fontaines.insert_one(
     {
         "_id": FONTAINE,
@@ -71,24 +91,26 @@ db.fontaines.insert_one(
     }
 )
 
-# Lectures_debit : une par minute pendant la dernière heure, débit nul une minute sur trois
+# INSERT INTO lectures_debit (...) VALUES (...), ...
+# La boucle prépare 60 documents, un par minute, avec un débit nul une minute sur trois.
 db.lectures_debit.insert_many(
     [
         {
             "horodatage": maintenant - timedelta(minutes=m),
             "fontaine_id": FONTAINE,
-            "debit": round(random.uniform(0, 2.5), 1),
+            "debit": 0.0 if m % 3 == 0 else round(random.uniform(0.1, 2.5), 1),
         }
         for m in range(60)
     ]
 )
 
-# Remplissages : 10 aujourd'hui (entre minuit et maintenant) et 10 les jours précédents
+# Répartir les 10 premiers remplissages entre minuit et maintenant,
+# même si le script est exécuté juste après minuit.
 duree_aujourdhui = maintenant - minuit
 
 remplissages = [
     {
-        "horodatage": maintenant - timedelta(minutes=5 * i),
+        "horodatage": minuit + duree_aujourdhui * (i / 10),
         "fontaine_id": FONTAINE,
         "volume": round(random.uniform(0.5, 0.8), 1),
     }
@@ -97,22 +119,19 @@ remplissages = [
 
 remplissages += [
     {
-        "horodatage": maintenant - timedelta(days=jour + 1),  # un par jour précédent
+        "horodatage": minuit - timedelta(hours=12 + 24 * jour),
         "fontaine_id": FONTAINE,
         "volume": round(random.uniform(0.5, 0.8), 1),
     }
     for jour in range(10)
 ]
 
+# INSERT INTO remplissages (...) VALUES (...), ...
+# Les deux groupes de dates sont réunis dans la liste passée à insert_many.
 db.remplissages.insert_many(remplissages)
 
-for nom in (
-    "fontaines",
-    "utilisateurs",
-    "lectures_debit",
-    "remplissages",
-    "evenements",
-):
+# SELECT COUNT(*) FROM <collection>. Le filtre vide {} compte tous les documents.
+for nom in COLLECTIONS:
     print(f"{nom} : {db[nom].count_documents({})}")
 
 client.close()

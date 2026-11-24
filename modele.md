@@ -12,7 +12,7 @@ Le nombre de bouteilles n'est pas stocké, car il suffit de compter les document
 fontaine = {
     "_id": "hydrocegep-01",
     "nom": "Fontaine du corridor TI",
-    "config": {"mode_auto": True, "duree_vie_filtre": 3000},
+    "config": {"mode_auto": True, "seuil_alerte_litres": 3000},
     "filtre": {
         "date_changement": datetime(2026, 11, 6, 14, 12, tzinfo=timezone.utc),
         "litres_depuis_changement": 1840.5,

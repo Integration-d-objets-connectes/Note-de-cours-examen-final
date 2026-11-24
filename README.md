@@ -32,7 +32,7 @@ Sous chaque exemple, justifiez brièvement (une phrase par point) :
 4. **Chaque référence** : vers quelle collection, et pourquoi référencer plutôt qu'intégrer.
 5. **Chaque copie** : quelle donnée est dupliquée, et pourquoi.
 
-## Partie 2 - Insertion des données (`inserer_donnees.py`)
+## Partie 2 - Insertion des données (`insertion_donnees.py`)
 
 Écrivez un script Python (PyMongo) qui remplit la base avec des données de votre choix, conformes à votre modèle.
 
@@ -42,6 +42,25 @@ Il doit insérer au minimum :
 - 60 lectures de débit, une par minute pendant la dernière heure ;
 - 20 remplissages, dont au moins 5 aujourd'hui et au moins 5 les jours précédents ;
 - 4 événements : au moins une alerte et au moins un changement de filtre par chacun des 2 techniciens.
+
+### Charger ou recharger les données de pratique
+
+1. Dans un terminal, placez-vous dans le dossier du projet, puis créez et activez un environnement virtuel (macOS ou Linux). Installez ensuite les dépendances.
+
+   ```sh
+   python3 -m venv .venv
+   source .venv/bin/activate
+   python -m pip install -r requirements.txt
+   ```
+
+2. Si le fichier `.env` n’existe pas, créez-le avec `cp .env.exemple .env`. Dans `.env`, renseignez `MONGODB_URI` avec votre chaîne de connexion MongoDB et `MONGODB_BASE` avec le nom de votre base de pratique, par exemple `bd_pratique`.
+3. Vérifiez la base choisie avant de lancer le script. **À chaque exécution, le script supprime `fontaines`, `utilisateurs`, `lectures_debit`, `remplissages` et `evenements` avec toutes leurs données.** Il recrée `lectures_debit` en série temporelle, puis recharge les données d’exemple.
+
+   ```sh
+   python insertion_donnees.py
+   ```
+
+4. Vérifiez les totaux affichés. Vous devriez obtenir 1 fontaine, 2 utilisateurs, 60 lectures, 20 remplissages et 4 événements. Pour repartir des données d’exemple après vos essais, relancez la même commande.
 
 ## Partie 3 - Requêtes (`requetes.py`)
 

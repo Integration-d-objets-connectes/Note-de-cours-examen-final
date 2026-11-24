@@ -8,7 +8,7 @@ Pour l’[énoncé HydroCégep](../README.md), vise une fontaine, deux technicie
 
 ## 2. Préparer une date de référence et la collection time series
 
-Les blocs supposent que `db` est connecté à une base de pratique vide.
+Les blocs supposent que `db` est connecté à la base de pratique. Pour relancer l’insertion, supprime d’abord les cinq collections du projet avec `drop_collection`. MongoDB accepte aussi cette commande si une collection n’existe pas encore. [Étapes de configuration et de lancement](../README.md#charger-ou-recharger-les-données-de-pratique)
 
 ```python
 from datetime import datetime, timedelta, timezone
@@ -21,6 +21,9 @@ minuit = maintenant.astimezone(fuseau).replace(
 ).astimezone(timezone.utc)
 fontaine_id = "hydrocegep-01"
 
+for nom in ("fontaines", "utilisateurs", "lectures_debit", "remplissages", "evenements"):
+    db.drop_collection(nom)
+
 db.create_collection("lectures_debit", timeseries={
     "timeField": "horodatage",
     "metaField": "fontaine_id",
@@ -28,7 +31,7 @@ db.create_collection("lectures_debit", timeseries={
 })
 ```
 
-Crée la série temporelle avant la première mesure. Sur une base déjà remplie, une relance peut dupliquer l’historique ou causer un conflit de `_id`.
+Crée la série temporelle après le `drop` et avant la première mesure pour que MongoDB lui applique les options `timeseries`.
 
 ## 3. Insérer les entités, puis réutiliser leurs identifiants
 
@@ -109,4 +112,19 @@ db.evenements.insert_many([
 
 **Variantes** — Toutes les cinq minutes → `timedelta(minutes=5 * i)`. Aujourd’hui → dates entre minuit et maintenant. Valeurs aléatoires → fixe d’abord les quantités et les types obligatoires.
 
-**Pièges du script de pratique** — Les noms copiés doivent correspondre aux identifiants et les débits à zéro doivent être générés explicitement. [Script d’insertion](../insertion_donnees.py)
+Voici deux vérifications à exécuter après l’insertion. Les totaux attendus sont de 10 remplissages de chaque côté de minuit et d’un changement de filtre par technicien.
+
+```python
+# Comme SELECT COUNT(*) ... WHERE horodatage >= minuit ou horodatage < minuit.
+print(db.remplissages.count_documents({"horodatage": {"$gte": minuit}}))
+print(db.remplissages.count_documents({"horodatage": {"$lt": minuit}}))
+
+# Le point dans utilisateur.id permet de filtrer sur un champ du sous-document.
+for technicien_id in (lea_id, pierre_id):
+    print(db.evenements.count_documents({
+        "type": "changement_filtre",
+        "utilisateur.id": technicien_id,
+    }))
+```
+
+[Script d’insertion complet](../insertion_donnees.py)
